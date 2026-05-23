@@ -16,28 +16,7 @@ import { AppScreen, FoodItem, CartItem, UserAddress, OrderHistoryItem, AppNotifi
 import { FOOD_ITEMS, SAVED_ADDRESSES, MOCK_NOTIFICATIONS, INITIAL_ORDER_HISTORY } from './data';
 import { UiScreens } from './components/UiScreens';
 
-// Firebase core integrations
-import { 
-  auth, 
-  db, 
-  googleProvider, 
-  OperationType, 
-  handleFirestoreError 
-} from './lib/firebase';
-import { 
-  signInWithPopup, 
-  signOut, 
-  onAuthStateChanged 
-} from 'firebase/auth';
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  collection, 
-  onSnapshot, 
-  deleteDoc 
-} from 'firebase/firestore';
+// Firebase core integrations completely disabled/bypassed for offline operation
 
 export default function App() {
   // Screen Router state
@@ -60,27 +39,26 @@ export default function App() {
   const [userAvatar, setUserAvatar] = useState<string>('🐼');
   const [orderHistory, setOrderHistory] = useState<OrderHistoryItem[]>(INITIAL_ORDER_HISTORY);
 
-  // Firebase auth sync states
+  // Purely Local/Mock Auth sync states for disconnected offline-first operation
   const [fbUser, setFbUser] = useState<any | null>(null);
-  const [fbLoading, setFbLoading] = useState<boolean>(true);
+  const [fbLoading, setFbLoading] = useState<boolean>(false);
 
-  // Authenticate triggers
+  // Authenticate triggers - now completely offline/mocked for zero network delays
   const handleGoogleSignIn = async () => {
-    try {
-      setFbLoading(true);
-      const res = await signInWithPopup(auth, googleProvider);
-      return res.user;
-    } catch (e) {
-      console.error("Sign-in with Google failed: ", e);
-    } finally {
+    setFbLoading(true);
+    setTimeout(() => {
+      setFbUser({ uid: 'cozy-panda-99', email: 'panda@cyrabites.com' });
+      setUserName('Panda Foodie');
+      setUserAvatar('🐼');
       setFbLoading(false);
-    }
+    }, 600);
+    return { uid: 'cozy-panda-99', email: 'panda@cyrabites.com' };
   };
 
   const handleSignOut = async () => {
-    try {
-      setFbLoading(true);
-      await signOut(auth);
+    setFbLoading(true);
+    setTimeout(() => {
+      setFbUser(null);
       setCart([
         { foodId: 't1', quantity: 1 },
         { foodId: 'd1', quantity: 2 }
@@ -91,113 +69,15 @@ export default function App() {
       setOrderHistory(INITIAL_ORDER_HISTORY);
       setUserName('Chandra Mama');
       setUserAvatar('🐼');
-      setCurrentScreen(AppScreen.ONBOARDING);
-    } catch (e) {
-      console.error("Sign out failed: ", e);
-    } finally {
       setFbLoading(false);
-    }
+      setCurrentScreen(AppScreen.ONBOARDING);
+    }, 400);
   };
 
-  // Setup Firestore listener loops
+  // Setup local bypass for Firestore listeners
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (loadedUser) => {
-      setFbLoading(true);
-      if (loadedUser) {
-        setFbUser(loadedUser);
-        
-        // Read/Write profile document from /users/{uid}
-        const userRef = doc(db, 'users', loadedUser.uid);
-        try {
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            setUserName(data.name || loadedUser.displayName || 'Panda Foodie');
-            setUserAvatar(data.avatar || '🐼');
-            setFavorites(data.favorites ?? []);
-            setCart(data.cart ?? []);
-          } else {
-            // Unregistered user - set initial document
-            await setDoc(userRef, {
-              uid: loadedUser.uid,
-              name: loadedUser.displayName || 'Panda Foodie',
-              avatar: '🐼',
-              favorites: favorites,
-              cart: cart
-            });
-            setUserName(loadedUser.displayName || 'Panda Foodie');
-            setUserAvatar('🐼');
-          }
-        } catch (e) {
-          console.warn("Profile fetching warning:", e);
-        }
-
-        // Subcollection Addresses snapshot loop
-        const addrsCol = collection(db, 'users', loadedUser.uid, 'addresses');
-        const unsubAddrs = onSnapshot(addrsCol, (snapshot) => {
-          const list: UserAddress[] = [];
-          snapshot.forEach((doc) => {
-            list.push({ id: doc.id, ...doc.data() } as UserAddress);
-          });
-          setUserAddressList(list);
-          if (list.length > 0) {
-            const defaultAddr = list.find(a => a.isDefault);
-            setSelectedAddressId(defaultAddr ? defaultAddr.id : list[0].id);
-          } else {
-            setSelectedAddressId('');
-          }
-        }, (error) => {
-          console.error("Addresses snapshot failing: ", error);
-        });
-
-        // Subcollection Orders snapshot loop
-        const ordersCol = collection(db, 'users', loadedUser.uid, 'orders');
-        const unsubOrders = onSnapshot(ordersCol, (snapshot) => {
-          const list: OrderHistoryItem[] = [];
-          snapshot.forEach((doc) => {
-            list.push({ id: doc.id, ...doc.data() } as OrderHistoryItem);
-          });
-          setOrderHistory(list);
-        }, (error) => {
-          console.error("Orders snapshot failing: ", error);
-        });
-
-        setFbLoading(false);
-
-        return () => {
-          unsubAddrs();
-          unsubOrders();
-        };
-      } else {
-        setFbUser(null);
-        setFbLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
+    setFbLoading(false);
   }, []);
-
-  // Sync basic state updates to the Firestore profile document inside a debounced hook
-  useEffect(() => {
-    if (!fbUser) return;
-
-    const pushProfileUpdate = async () => {
-      const userRef = doc(db, 'users', fbUser.uid);
-      try {
-        await updateDoc(userRef, {
-          name: userName,
-          avatar: userAvatar,
-          favorites: favorites,
-          cart: cart
-        });
-      } catch (e) {
-        console.warn("Debounced profile updates synced failed (safe to ignore if initialization logs it):", e);
-      }
-    };
-
-    const delayHandler = setTimeout(pushProfileUpdate, 750);
-    return () => clearTimeout(delayHandler);
-  }, [userName, userAvatar, favorites, cart, fbUser]);
 
   // Intercepting helpers to keep subcollections matching state setters
   const handleSetUserAddressList = async (action: React.SetStateAction<UserAddress[]>) => {
@@ -207,31 +87,7 @@ export default function App() {
     } else {
       nextList = action;
     }
-
-    if (fbUser) {
-      // Find diffs to set
-      for (const item of nextList) {
-        const found = userAddressList.find(a => a.id === item.id);
-        if (!found || JSON.stringify(found) !== JSON.stringify(item)) {
-          const addrDoc = doc(db, 'users', fbUser.uid, 'addresses', item.id);
-          await setDoc(addrDoc, item).catch(err => {
-            handleFirestoreError(err, OperationType.CREATE, `users/${fbUser.uid}/addresses/${item.id}`);
-          });
-        }
-      }
-
-      // Find diffs to delete
-      for (const old of userAddressList) {
-        if (!nextList.find(item => item.id === old.id)) {
-          const addrDoc = doc(db, 'users', fbUser.uid, 'addresses', old.id);
-          await deleteDoc(addrDoc).catch(err => {
-            handleFirestoreError(err, OperationType.DELETE, `users/${fbUser.uid}/addresses/${old.id}`);
-          });
-        }
-      }
-    } else {
-      setUserAddressList(nextList);
-    }
+    setUserAddressList(nextList);
   };
 
   const handleSetOrderHistory = async (action: React.SetStateAction<OrderHistoryItem[]>) => {
@@ -241,20 +97,7 @@ export default function App() {
     } else {
       nextList = action;
     }
-
-    if (fbUser) {
-      for (const item of nextList) {
-        const found = orderHistory.find(o => o.id === item.id);
-        if (!found || JSON.stringify(found) !== JSON.stringify(item)) {
-          const orderDoc = doc(db, 'users', fbUser.uid, 'orders', item.id);
-          await setDoc(orderDoc, item).catch(err => {
-            handleFirestoreError(err, OperationType.CREATE, `users/${fbUser.uid}/orders/${item.id}`);
-          });
-        }
-      }
-    } else {
-      setOrderHistory(nextList);
-    }
+    setOrderHistory(nextList);
   };
 
   // Sound Synth enable state
