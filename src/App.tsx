@@ -379,47 +379,140 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen w-full flex flex-col items-center justify-center ${
+    <div className={`min-h-screen w-full flex flex-col ${
       isDarkMode 
         ? 'bg-[#120F0D] text-gray-100 selection:bg-[#FF9E59]/40' 
         : 'bg-[#FAF7F2] text-gray-800 selection:bg-[#FF8596]/30'
-    } transition-colors duration-500 font-sans p-0 sm:p-6 relative overflow-hidden`}>
+    } transition-colors duration-500 font-sans relative overflow-x-hidden pb-12`}>
       
       {/* Decorative Warm Blurred Backdrops */}
       <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#FF9E59]/4 rounded-full blur-3xl pointer-events-none select-none animate-pulse-glow" />
       <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-[#FF8596]/4 rounded-full blur-3xl pointer-events-none select-none animate-pulse-glow" style={{ animationDelay: '2s' }} />
 
-      {/* Main Container - Desktop-centered, mobile-responsive */}
-      <div className="relative z-10 w-full max-w-sm sm:max-w-md flex flex-col items-center justify-center">
-
-        {/* Elegant Phone Bezels Frame (on desktop, disappears on actual mobile) */}
-        <div className="relative w-full sm:w-[385px] h-screen sm:h-[795px] sm:rounded-[52px] sm:bg-zinc-900 sm:border-[10px] sm:border-zinc-800 sm:shadow-2xl sm:p-3 flex flex-col overflow-hidden group">
-          
-          {/* Top speaker grill physical mockup bar - sm only */}
-          <div className="hidden sm:flex absolute top-1 left-12 right-12 h-6 justify-center items-center z-40 select-none">
-            <div className="w-1.5 h-1.5 bg-neutral-900 rounded-full mr-2.5" />
-            <div className="w-24 h-4 bg-black rounded-xl border border-white/5 flex items-center justify-center p-0.5">
-              <div className="w-2.5 h-2.5 bg-zinc-900 rounded-full border border-zinc-800 shadow-inner mr-2" />
-              <div className="w-2 h-2 bg-blue-950 rounded-full" />
+      {/* Main Adaptive Layout Wrapper */}
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6 relative z-10 flex-1">
+        
+        {/* 1. NEW PREMIUM WEB APP HEADER */}
+        <header className={`w-full rounded-3xl p-4 md:px-7 border transition-all duration-300 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-md ${
+          isDarkMode ? 'bg-[#1C1816]/90 border-white/10 text-white' : 'bg-white border-brand-primary/10 text-brand-charcoal'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <span className="text-3xl animate-float-slow select-none" style={{ animationDuration: '5s' }}>🍕</span>
+              <div>
+                <h1 className="text-xl font-black font-display tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-secondary">
+                  Cyra Bites ✨
+                </h1>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mt-1">
+                  {language === 'en' ? 'Cozy Local Flavors Delivery' : 'అచ్చమైన తెలుగు రుచులు'}
+                </p>
+              </div>
+            </div>
+            
+            {/* Loyalty points display for mobile */}
+            <div className="flex md:hidden items-center">
+              <span className="text-xs font-black bg-brand-primary/10 text-brand-primary px-3 py-1.5 rounded-full flex items-center space-x-1">
+                <Award size={13} className="text-brand-secondary animate-bounce" />
+                <span>{rewardsPoints} {language === 'en' ? 'Pts' : 'పాయింట్'}</span>
+              </span>
             </div>
           </div>
 
-          {/* Inner phone screen container */}
-          <div className={`flex-1 w-full h-full sm:rounded-[40px] overflow-hidden flex flex-col relative transition-all duration-300 ${
-            isDarkMode ? 'bg-[#1C1816] text-white border-zinc-900' : 'bg-brand-cream text-brand-charcoal border-white/40'
-          }`}>
-            
-            {/* Top OS status bar details mockup */}
-            <div className="h-10 w-full flex justify-between items-center px-6 pt-2.5 z-30 select-none font-bold text-xs">
-              <span className={isDarkMode ? 'text-white' : 'text-brand-charcoal'}>{simTime}</span>
-              <div className="flex items-center space-x-1.5">
-                <Wifi size={12} className={isDarkMode ? 'text-white' : 'text-brand-charcoal'} />
-                <span className="text-[10px] tracking-tight">5G</span>
-                <BatteryFull size={14} className={isDarkMode ? 'text-brand-yellow' : 'text-brand-secondary'} />
-              </div>
+          {/* Desktop Web Application Navigation Links */}
+          <nav className="hidden md:flex items-center space-x-1 bg-neutral-100/80 dark:bg-black/30 p-1 rounded-2xl border border-brand-primary/5">
+            {[
+              { scr: AppScreen.HOME, icon: <Pizza size={14} />, label: language === 'en' ? 'Bites Menu' : 'వంటకాలు' },
+              { scr: AppScreen.CART, icon: <ShoppingBag size={14} />, label: language === 'en' ? 'Cart & Checkout' : 'చెకౌట్' },
+              { scr: AppScreen.TRACKING, icon: <MapPin size={14} />, label: language === 'en' ? 'Tracker' : 'ట్రాకర్' },
+              { scr: AppScreen.PROFILE, icon: <Award size={14} />, label: language === 'en' ? 'Premium Profile' : 'ప్రొఫైల్' }
+            ].map(tab => {
+              const isActive = currentScreen === tab.scr;
+              return (
+                <button
+                  key={tab.scr}
+                  onClick={() => { playPushChime(); setCurrentScreen(tab.scr); }}
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-black tracking-wide transition-all ${
+                    isActive 
+                      ? 'bg-gradient-to-r from-brand-primary to-brand-secondary text-white shadow-md' 
+                      : 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/5'
+                  }`}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Practical Application Utility Controls */}
+          <div className="flex items-center justify-between md:justify-end gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-neutral-100 dark:border-white/5">
+            {/* Loyalty points for desktop */}
+            <div className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 dark:from-white/5 dark:to-white/10 px-4 py-2 rounded-2xl border border-brand-primary/20">
+              <Award size={14} className="text-brand-secondary animate-bounce" />
+              <span className="text-xs text-brand-secondary font-black">
+                {language === 'en' ? 'Loyalty Rewards:' : 'లాయల్టీ పాయింట్లు:'} {rewardsPoints} {language === 'en' ? 'Pts' : 'పాయింట్'}
+              </span>
             </div>
 
-            {/* SLIDE-DOWN SYSTEM PUSH NOTIFICATION SIMULATION */}
+            <div className="flex items-center space-x-2">
+              {/* Reset State shortcut */}
+              <button 
+                onClick={() => {
+                  playPushChime();
+                  setCart([
+                    { foodId: 't1', quantity: 1 },
+                    { foodId: 'd1', quantity: 2 }
+                  ]);
+                  setFavorites(['t1', 'm1', 'de1']);
+                  setSelectedFoodId('t1');
+                  setUserAddressList(SAVED_ADDRESSES);
+                  setSelectedAddressId('');
+                  setActiveOrderStep(0);
+                  setRewardsPoints(250);
+                  setCurrentScreen(AppScreen.SPLASH);
+                }}
+                title="Reset Session Data"
+                className="p-2.5 rounded-xl bg-neutral-100 dark:bg-white/5 text-gray-500 hover:text-brand-secondary active:scale-90 transition-all"
+              >
+                <RotateCcw size={15} />
+              </button>
+
+              {/* Audio Feedback Controller */}
+              <button
+                onClick={() => { setIsSoundOn(!isSoundOn); playPushChime(); }}
+                title={isSoundOn ? 'Mute Sounds' : 'Unmute Sounds'}
+                className="p-2.5 rounded-xl bg-neutral-100 dark:bg-white/5 text-gray-500 hover:text-brand-secondary active:scale-95 transition-all text-xs"
+              >
+                {isSoundOn ? '🔊' : '🔇'}
+              </button>
+
+              {/* Language Selection */}
+              <button
+                onClick={() => { playPushChime(); setLanguage(language === 'en' ? 'te' : 'en'); }}
+                className="px-3 py-2 rounded-xl border border-brand-primary/20 text-brand-secondary bg-brand-primary/10 font-black hover:bg-brand-primary/15 transition-all text-xs"
+              >
+                🌐 {language === 'en' ? 'తెలుగు' : 'English'}
+              </button>
+
+              {/* Light vs Dark Theme Selection */}
+              <button
+                onClick={() => { playPushChime(); setIsDarkMode(!isDarkMode); }}
+                className="p-2.5 rounded-xl text-neutral-500 hover:text-neutral-800 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:scale-105 active:scale-95 transition-all"
+              >
+                {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* 2. MAIN WEB APP CONTAINER FRAME - NO PHONEY MOCKUPS */}
+        <main className={`relative w-full rounded-3xl border shadow-xl transition-all duration-300 flex flex-col overflow-hidden ${
+          isDarkMode ? 'bg-[#1C1816]/95 border-white/10 text-white' : 'bg-white border-brand-primary/10 text-brand-charcoal'
+        }`}>
+          
+          <div className="flex-1 min-h-[640px] md:min-h-[720px] max-h-[760px] flex flex-col relative overflow-hidden">
+            
+            {/* Live active push notification banner overlay */}
             <AnimatePresence>
               {activePush && (
                 <motion.div 
@@ -428,17 +521,17 @@ export default function App() {
                   exit={{ y: -65, opacity: 0, scale: 0.95 }}
                   transition={{ type: 'spring', damping: 14 }}
                   onClick={() => { setActivePush(null); setCurrentScreen(AppScreen.PROFILE); }}
-                  className="absolute top-11 left-3 right-3 z-50 p-3 rounded-2xl glass-effect shadow-xl border border-brand-primary/20 flex space-x-3 items-center cursor-pointer hover:opacity-95 select-none"
+                  className="absolute top-11 left-3 right-3 z-50 p-4 rounded-2xl glass-effect shadow-2xl border border-brand-primary/25 flex space-x-3 items-center cursor-pointer hover:opacity-95 select-none"
                 >
-                  <div className="h-9 w-9 bg-gradient-to-tr from-brand-primary to-brand-secondary text-white rounded-xl shadow-xs flex items-center justify-center text-lg">
+                  <div className="h-10 w-10 bg-gradient-to-tr from-brand-primary to-brand-secondary text-white rounded-xl shadow-md flex items-center justify-center text-xl animate-float-slow">
                     {activePush.icon}
                   </div>
                   <div className="flex-1 text-left">
-                    <div className="flex justify-between items-center text-[9px] font-black text-brand-secondary">
-                      <span>CYRA BITE ALERT 🛵</span>
-                      <span className="font-mono text-[8px] opacity-70">Just Now</span>
+                    <div className="flex justify-between items-center text-[10px] font-black text-brand-secondary uppercase tracking-widest">
+                      <span>Cyra Bites Alert 🛵</span>
+                      <span className="font-mono text-[9px] opacity-70">Now</span>
                     </div>
-                    <p className="text-[11px] font-extrabold leading-tight text-brand-charcoal mt-0.5">
+                    <p className="text-xs font-black leading-tight text-neutral-800 mt-0.5">
                       {language === 'en' ? activePush.message : activePush.messageTelugu}
                     </p>
                   </div>
@@ -446,7 +539,7 @@ export default function App() {
               )}
             </AnimatePresence>
 
-            {/* THE LIVE SYSTEM SCREENS COMPONENT MOUNT */}
+            {/* Rendered Application Subscreen */}
             <div className="flex-1 w-full h-full relative overflow-hidden">
               <UiScreens 
                 currentScreen={currentScreen}
@@ -484,79 +577,33 @@ export default function App() {
               />
             </div>
 
-            {/* Premium bottom system navigation bar */}
-            <div className="h-14 w-full flex justify-around items-center px-4 bg-black/5 dark:bg-black/25 border-t border-brand-primary/5 z-20 select-none">
+            {/* Adaptive application navigation bar for mobile-sizes (hidden on large displays) */}
+            <div className="h-16 w-full flex justify-around items-center px-4 bg-neutral-50/95 dark:bg-black/35 border-t border-brand-primary/15 md:hidden z-20 select-none">
               {[
-                { scr: AppScreen.HOME, icon: <Pizza size={16} />, label: language === 'en' ? 'Bites' : 'మెనూ' },
-                { scr: AppScreen.CART, icon: <ShoppingBag size={16} />, label: language === 'en' ? 'Order' : 'ఆర్డర్' },
-                { scr: AppScreen.TRACKING, icon: <MapPin size={16} />, label: language === 'en' ? 'Tracker' : 'ట్రాకర్' },
-                { scr: AppScreen.PROFILE, icon: <Award size={16} />, label: language === 'en' ? 'Me' : 'ప్రొఫైల్' }
+                { scr: AppScreen.HOME, icon: <Pizza size={18} />, label: language === 'en' ? 'Bites' : 'మెనూ' },
+                { scr: AppScreen.CART, icon: <ShoppingBag size={18} />, label: language === 'en' ? 'Order' : 'ఆర్డర్' },
+                { scr: AppScreen.TRACKING, icon: <MapPin size={18} />, label: language === 'en' ? 'Tracker' : 'ట్రాకర్' },
+                { scr: AppScreen.PROFILE, icon: <Award size={18} />, label: language === 'en' ? 'Me' : 'నేను' }
               ].map(tab => {
-                const isA = currentScreen === tab.scr;
+                const isActive = currentScreen === tab.scr;
                 return (
                   <button
                     key={tab.scr}
                     onClick={() => { playPushChime(); setCurrentScreen(tab.scr); }}
-                    className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all ${
-                      isA ? 'text-brand-secondary scale-110 font-extrabold' : 'text-gray-400 font-bold hover:text-gray-600'
+                    className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all ${
+                      isActive ? 'text-brand-primary scale-110 font-black' : 'text-gray-400 font-bold hover:text-gray-600'
                     }`}
                   >
                     {tab.icon}
-                    <span className="text-[9px] mt-0.5 tracking-tighter">{tab.label}</span>
+                    <span className="text-[10px] mt-0.5 tracking-tighter">{tab.label}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Bottom physical home indicator pill mock */}
-            <div className="h-5 w-full flex justify-center items-center pb-2 z-20 select-none">
-              <div className="w-32 h-1 bg-zinc-600 rounded-full" />
-            </div>
           </div>
-        </div>
+        </main>
 
-      </div>
-
-      {/* Subtle Floating Interactive Menu in bottom-right (for reset/audio options) */}
-      <div className="hidden md:flex absolute bottom-4 right-4 items-center space-x-3 z-50">
-        {/* Reset */}
-        <button 
-          onClick={() => {
-            playPushChime();
-            setCart([
-              { foodId: 't1', quantity: 1 },
-              { foodId: 'd1', quantity: 2 }
-            ]);
-            setFavorites(['t1', 'm1', 'de1']);
-            setSelectedFoodId('t1');
-            setUserAddressList(SAVED_ADDRESSES);
-            setSelectedAddressId('');
-            setActiveOrderStep(0);
-            setRewardsPoints(250);
-            setCurrentScreen(AppScreen.SPLASH);
-          }}
-          title="Reset Session"
-          className={`p-3.5 rounded-full shadow-lg border transition-all ${
-            isDarkMode 
-              ? 'bg-[#1C1816]/90 hover:bg-neutral-800 text-brand-secondary border-neutral-800' 
-              : 'bg-white/90 hover:bg-neutral-100 text-brand-secondary border-neutral-200'
-          }`}
-        >
-          <RotateCcw size={16} className="animate-spin" style={{ animationDuration: '6s' }} />
-        </button>
-
-        {/* Audio */}
-        <button
-          onClick={() => { setIsSoundOn(!isSoundOn); playPushChime(); }}
-          title={isSoundOn ? 'Mute Sounds' : 'Unmute Sounds'}
-          className={`p-3.5 rounded-full shadow-lg border transition-all ${
-            isDarkMode 
-              ? 'bg-[#1C1816]/90 hover:bg-neutral-800 text-white border-neutral-800' 
-              : 'bg-white/90 hover:bg-neutral-100 text-neutral-800 border-neutral-200'
-          }`}
-        >
-          {isSoundOn ? '🔊' : '🔇'}
-        </button>
       </div>
 
     </div>
