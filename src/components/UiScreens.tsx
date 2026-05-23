@@ -35,8 +35,6 @@ interface ScreenProps {
   setActiveOrderStep: React.Dispatch<React.SetStateAction<number>>;
   orderPlacedTotal: number;
   setOrderPlacedTotal: (total: number) => void;
-  rewardsPoints: number;
-  setRewardsPoints: React.Dispatch<React.SetStateAction<number>>;
   userName: string;
   setUserName: (name: string) => void;
   userAvatar: string;
@@ -218,8 +216,6 @@ export const UiScreens: React.FC<ScreenProps> = ({
   setActiveOrderStep,
   orderPlacedTotal,
   setOrderPlacedTotal,
-  rewardsPoints,
-  setRewardsPoints,
   userName,
   setUserName,
   userAvatar,
@@ -596,8 +592,6 @@ export const UiScreens: React.FC<ScreenProps> = ({
 
     const submitOtpVerify = () => {
       triggerSparkleSound();
-      // Set points as initial sign up gift
-      setRewardsPoints(250);
       navTo(AppScreen.HOME);
     };
 
@@ -739,7 +733,6 @@ export const UiScreens: React.FC<ScreenProps> = ({
                   navTo(AppScreen.HOME);
                 }
               } else {
-                setRewardsPoints(250);
                 navTo(AppScreen.HOME);
               }
             }}
@@ -788,13 +781,43 @@ export const UiScreens: React.FC<ScreenProps> = ({
             </div>
 
             {/* Notification & profile bell icon drawer */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5 pt-0.5">
+              {/* Language Selection */}
+              <button
+                onClick={() => { triggerSparkleSound(); setLanguage(language === 'en' ? 'te' : 'en'); }}
+                className={`px-2.5 py-1.5 rounded-xl border text-[10px] font-black tracking-wide transition-all ${
+                  isDarkMode 
+                    ? 'bg-white/5 border-white/10 text-brand-secondary hover:bg-white/10' 
+                    : 'bg-white border-brand-primary/25 text-brand-secondary hover:bg-neutral-50'
+                }`}
+                title={language === 'en' ? 'Change to Telugu' : 'Change to English'}
+              >
+                🌐 {language === 'en' ? 'తే' : 'En'}
+              </button>
+
+              {/* Light vs Dark Theme Selection */}
+              <button
+                onClick={() => { triggerSparkleSound(); setIsDarkMode(!isDarkMode); }}
+                className={`p-2 rounded-xl border transition-all ${
+                  isDarkMode 
+                    ? 'bg-white/5 border-white/10 text-yellow-400 hover:bg-white/10' 
+                    : 'bg-white border-brand-primary/20 text-gray-500 hover:text-gray-800 hover:bg-neutral-50'
+                }`}
+                title={isDarkMode ? 'Light Mode' : 'Dark Mode'}
+              >
+                {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
+              </button>
+
               <button 
                 onClick={() => navTo(AppScreen.PROFILE)}
-                className={`p-2.5 rounded-xl ${isDarkMode ? 'bg-white/5 text-white' : 'bg-white shadow-xs text-brand-charcoal'} relative hover:bg-opacity-85`}
+                className={`p-2 rounded-xl border transition-all ${
+                  isDarkMode 
+                    ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' 
+                    : 'bg-white border-brand-primary/20 text-brand-charcoal hover:bg-neutral-50'
+                } relative`}
               >
-                <Award size={18} className="text-brand-yellow animate-pulse" />
-                <span className="absolute -top-1 -right-1 bg-brand-secondary text-white text-[8px] font-bold h-4 w-4 rounded-full flex items-center justify-center animate-bounce">
+                <Award size={15} className="text-brand-yellow animate-pulse" />
+                <span className="absolute -top-1 -right-1 bg-brand-secondary text-white text-[7px] font-bold h-3.5 w-3.5 rounded-full flex items-center justify-center animate-bounce">
                   ✨
                 </span>
               </button>
@@ -1872,7 +1895,6 @@ export const UiScreens: React.FC<ScreenProps> = ({
         setPaymentProcessing(false);
         setPaymentFinished(true);
         setActiveOrderStep(0); // Set order live step to "Preparing"
-        setRewardsPoints(prev => prev + Math.round(orderPlacedTotal / 10)); // Reward cashback points
         
         // Append real order entry
         const newOrderId = `CY-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -2004,7 +2026,6 @@ export const UiScreens: React.FC<ScreenProps> = ({
               <div className="space-y-2">
                 <h4 className="text-xl font-black text-brand-charcoal font-display">{t.paymentSuccess}</h4>
                 <p className="text-xs text-brand-secondary font-bold">{t.rideStart}</p>
-                <p className="text-[10px] text-gray-500 font-mono font-bold">+25 loyalty points credited to your rewards card!</p>
               </div>
             </motion.div>
           )}
@@ -2121,11 +2142,6 @@ export const UiScreens: React.FC<ScreenProps> = ({
     );
   }
   if (currentScreen === AppScreen.PROFILE) {
-    const handleAddPoints = () => {
-      triggerSparkleSound();
-      setRewardsPoints(prev => prev + 50);
-    };
-
     return (
       <div className={`h-full w-full flex flex-col justify-between ${isDarkMode ? 'bg-brand-charcoal text-white' : 'bg-brand-cream text-brand-charcoal'} transition-all`}>
         {/* Header */}
@@ -2151,9 +2167,6 @@ export const UiScreens: React.FC<ScreenProps> = ({
                   {userAvatar}
                 </div>
               </button>
-              <span className="absolute bottom-0 right-0 bg-brand-yellow text-brand-charcoal text-[9px] px-2 py-0.5 rounded-full font-black border border-white">
-                VIP
-              </span>
             </div>
 
             {/* Avatar picker grid */}
@@ -2210,7 +2223,7 @@ export const UiScreens: React.FC<ScreenProps> = ({
                 </div>
               )}
               <p className="text-[10px] font-bold text-brand-secondary uppercase tracking-widest">
-                {firebaseUser ? `${firebaseUser.email} 🔐` : t.memberTier}
+                {firebaseUser ? `${firebaseUser.email} 🔐` : (language === 'en' ? 'Verified Cozy Foodie' : 'ధృవీకరించబడిన రుచికరమైన భోజనప్రియులు')}
               </p>
             </div>
           </div>

@@ -56,7 +56,6 @@ export default function App() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [activeOrderStep, setActiveOrderStep] = useState<number>(0);
   const [orderPlacedTotal, setOrderPlacedTotal] = useState<number>(290);
-  const [rewardsPoints, setRewardsPoints] = useState<number>(310);
   const [userName, setUserName] = useState<string>('Chandra Mama');
   const [userAvatar, setUserAvatar] = useState<string>('🐼');
   const [orderHistory, setOrderHistory] = useState<OrderHistoryItem[]>(INITIAL_ORDER_HISTORY);
@@ -92,7 +91,6 @@ export default function App() {
       setOrderHistory(INITIAL_ORDER_HISTORY);
       setUserName('Chandra Mama');
       setUserAvatar('🐼');
-      setRewardsPoints(310);
       setCurrentScreen(AppScreen.ONBOARDING);
     } catch (e) {
       console.error("Sign out failed: ", e);
@@ -116,7 +114,6 @@ export default function App() {
             const data = userSnap.data();
             setUserName(data.name || loadedUser.displayName || 'Panda Foodie');
             setUserAvatar(data.avatar || '🐼');
-            setRewardsPoints(data.rewardsPoints ?? 250);
             setFavorites(data.favorites ?? []);
             setCart(data.cart ?? []);
           } else {
@@ -125,13 +122,11 @@ export default function App() {
               uid: loadedUser.uid,
               name: loadedUser.displayName || 'Panda Foodie',
               avatar: '🐼',
-              rewardsPoints: 250,
               favorites: favorites,
               cart: cart
             });
             setUserName(loadedUser.displayName || 'Panda Foodie');
             setUserAvatar('🐼');
-            setRewardsPoints(250);
           }
         } catch (e) {
           console.warn("Profile fetching warning:", e);
@@ -192,7 +187,6 @@ export default function App() {
         await updateDoc(userRef, {
           name: userName,
           avatar: userAvatar,
-          rewardsPoints: rewardsPoints,
           favorites: favorites,
           cart: cart
         });
@@ -203,7 +197,7 @@ export default function App() {
 
     const delayHandler = setTimeout(pushProfileUpdate, 750);
     return () => clearTimeout(delayHandler);
-  }, [userName, userAvatar, rewardsPoints, favorites, cart, fbUser]);
+  }, [userName, userAvatar, favorites, cart, fbUser]);
 
   // Intercepting helpers to keep subcollections matching state setters
   const handleSetUserAddressList = async (action: React.SetStateAction<UserAddress[]>) => {
@@ -266,28 +260,9 @@ export default function App() {
   // Sound Synth enable state
   const [isSoundOn, setIsSoundOn] = useState<boolean>(true);
 
-  // Phone OS Mock stats
-  const [simTime, setSimTime] = useState('09:41');
-  const [simBattery, setSimBattery] = useState(100);
-
   // Active push notification banner state inside the phone
   const [activePush, setActivePush] = useState<AppNotification | null>(null);
   const [customNotifyText, setCustomNotifyText] = useState('');
-
-  // Update mock phone time
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      let hrs = now.getHours();
-      let mins = now.getMinutes();
-      const stringMins = mins < 10 ? `0${mins}` : mins;
-      const stringHrs = hrs < 10 ? `0${hrs}` : hrs;
-      setSimTime(`${stringHrs}:${stringMins}`);
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Web Audio chime synthesizer
   const playPushChime = () => {
@@ -379,230 +354,105 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen w-full flex flex-col ${
+    <div className={`h-screen w-full flex flex-col ${
       isDarkMode 
         ? 'bg-[#120F0D] text-gray-100 selection:bg-[#FF9E59]/40' 
         : 'bg-[#FAF7F2] text-gray-800 selection:bg-[#FF8596]/30'
-    } transition-colors duration-500 font-sans relative overflow-x-hidden pb-12`}>
+    } transition-colors duration-500 font-sans relative overflow-hidden`}>
       
       {/* Decorative Warm Blurred Backdrops */}
       <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#FF9E59]/4 rounded-full blur-3xl pointer-events-none select-none animate-pulse-glow" />
       <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-[#FF8596]/4 rounded-full blur-3xl pointer-events-none select-none animate-pulse-glow" style={{ animationDelay: '2s' }} />
 
-      {/* Main Adaptive Layout Wrapper */}
-      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6 relative z-10 flex-1">
+      {/* Main Container - Full viewport height, centered max-w-md on wider display viewports */}
+      <div className="w-full max-w-md mx-auto h-full flex flex-col relative z-10 overflow-hidden bg-brand-cream dark:bg-brand-charcoal md:shadow-2xl md:border-x md:border-brand-primary/10">
         
-        {/* 1. NEW PREMIUM WEB APP HEADER */}
-        <header className={`w-full rounded-3xl p-4 md:px-7 border transition-all duration-300 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-md ${
-          isDarkMode ? 'bg-[#1C1816]/90 border-white/10 text-white' : 'bg-white border-brand-primary/10 text-brand-charcoal'
-        }`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <span className="text-3xl animate-float-slow select-none" style={{ animationDuration: '5s' }}>🍕</span>
-              <div>
-                <h1 className="text-xl font-black font-display tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-secondary">
-                  Cyra Bites ✨
-                </h1>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mt-1">
-                  {language === 'en' ? 'Cozy Local Flavors Delivery' : 'అచ్చమైన తెలుగు రుచులు'}
+        {/* Live active push notification banner overlay within mobile container view */}
+        <AnimatePresence>
+          {activePush && (
+            <motion.div 
+              initial={{ y: -65, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: -65, opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 14 }}
+              onClick={() => { setActivePush(null); setCurrentScreen(AppScreen.PROFILE); }}
+              className="absolute top-12 left-4 right-4 z-50 p-4 rounded-2xl glass-effect shadow-2xl border border-brand-primary/25 flex space-x-3 items-center cursor-pointer hover:opacity-95 select-none"
+            >
+              <div className="h-10 w-10 bg-gradient-to-tr from-brand-primary to-brand-secondary text-white rounded-xl shadow-md flex items-center justify-center text-xl animate-float-slow">
+                {activePush.icon}
+              </div>
+              <div className="flex-1 text-left">
+                <div className="flex justify-between items-center text-[10px] font-black text-brand-secondary uppercase tracking-widest">
+                  <span>Cyra Bites Alert 🛵</span>
+                  <span className="font-mono text-[9px] opacity-70">Now</span>
+                </div>
+                <p className="text-xs font-black leading-tight text-neutral-800 mt-0.5">
+                  {language === 'en' ? activePush.message : activePush.messageTelugu}
                 </p>
               </div>
-            </div>
-            
-            {/* Loyalty points display for mobile */}
-            <div className="flex md:hidden items-center">
-              <span className="text-xs font-black bg-brand-primary/10 text-brand-primary px-3 py-1.5 rounded-full flex items-center space-x-1">
-                <Award size={13} className="text-brand-secondary animate-bounce" />
-                <span>{rewardsPoints} {language === 'en' ? 'Pts' : 'పాయింట్'}</span>
-              </span>
-            </div>
-          </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          {/* Desktop Web Application Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-1 bg-neutral-100/80 dark:bg-black/30 p-1 rounded-2xl border border-brand-primary/5">
-            {[
-              { scr: AppScreen.HOME, icon: <Pizza size={14} />, label: language === 'en' ? 'Bites Menu' : 'వంటకాలు' },
-              { scr: AppScreen.CART, icon: <ShoppingBag size={14} />, label: language === 'en' ? 'Cart & Checkout' : 'చెకౌట్' },
-              { scr: AppScreen.TRACKING, icon: <MapPin size={14} />, label: language === 'en' ? 'Tracker' : 'ట్రాకర్' },
-              { scr: AppScreen.PROFILE, icon: <Award size={14} />, label: language === 'en' ? 'Premium Profile' : 'ప్రొఫైల్' }
-            ].map(tab => {
-              const isActive = currentScreen === tab.scr;
-              return (
-                <button
-                  key={tab.scr}
-                  onClick={() => { playPushChime(); setCurrentScreen(tab.scr); }}
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-black tracking-wide transition-all ${
-                    isActive 
-                      ? 'bg-gradient-to-r from-brand-primary to-brand-secondary text-white shadow-md' 
-                      : 'text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/5'
-                  }`}
-                >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+        {/* Rendered Application Subscreen */}
+        <div className="flex-1 w-full h-full relative overflow-hidden">
+          <UiScreens 
+            currentScreen={currentScreen}
+            onNavigate={handleNavigate}
+            language={language}
+            setLanguage={setLanguage}
+            isDarkMode={isDarkMode}
+            setIsDarkMode={setIsDarkMode}
+            cart={cart}
+            setCart={setCart}
+            favorites={favorites}
+            toggleFavorite={handleToggleFavorite}
+            selectedFoodId={selectedFoodId}
+            setSelectedFoodId={setSelectedFoodId}
+            userAddressList={userAddressList}
+            setUserAddressList={handleSetUserAddressList}
+            selectedAddressId={selectedAddressId}
+            setSelectedAddressId={setSelectedAddressId}
+            activeOrderStep={activeOrderStep}
+            setActiveOrderStep={setActiveOrderStep}
+            orderPlacedTotal={orderPlacedTotal}
+            setOrderPlacedTotal={setOrderPlacedTotal}
+            userName={userName}
+            setUserName={setUserName}
+            userAvatar={userAvatar}
+            setUserAvatar={setUserAvatar}
+            orderHistory={orderHistory}
+            setOrderHistory={handleSetOrderHistory}
+            firebaseUser={fbUser}
+            firebaseLoading={fbLoading}
+            onGoogleSignIn={handleGoogleSignIn}
+            onSignOut={handleSignOut}
+          />
+        </div>
 
-          {/* Practical Application Utility Controls */}
-          <div className="flex items-center justify-between md:justify-end gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-neutral-100 dark:border-white/5">
-            {/* Loyalty points for desktop */}
-            <div className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 dark:from-white/5 dark:to-white/10 px-4 py-2 rounded-2xl border border-brand-primary/20">
-              <Award size={14} className="text-brand-secondary animate-bounce" />
-              <span className="text-xs text-brand-secondary font-black">
-                {language === 'en' ? 'Loyalty Rewards:' : 'లాయల్టీ పాయింట్లు:'} {rewardsPoints} {language === 'en' ? 'Pts' : 'పాయింట్'}
-              </span>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              {/* Reset State shortcut */}
-              <button 
-                onClick={() => {
-                  playPushChime();
-                  setCart([
-                    { foodId: 't1', quantity: 1 },
-                    { foodId: 'd1', quantity: 2 }
-                  ]);
-                  setFavorites(['t1', 'm1', 'de1']);
-                  setSelectedFoodId('t1');
-                  setUserAddressList(SAVED_ADDRESSES);
-                  setSelectedAddressId('');
-                  setActiveOrderStep(0);
-                  setRewardsPoints(250);
-                  setCurrentScreen(AppScreen.SPLASH);
-                }}
-                title="Reset Session Data"
-                className="p-2.5 rounded-xl bg-neutral-100 dark:bg-white/5 text-gray-500 hover:text-brand-secondary active:scale-90 transition-all"
-              >
-                <RotateCcw size={15} />
-              </button>
-
-              {/* Audio Feedback Controller */}
+        {/* Permanent application bottom navigation bar */}
+        <div className="h-16 w-full flex justify-around items-center px-4 bg-white/95 dark:bg-black/35 border-t border-brand-primary/10 dark:border-white/5 z-20 select-none shadow-2xl">
+          {[
+            { scr: AppScreen.HOME, icon: <Pizza size={20} />, label: language === 'en' ? 'Bites' : 'మెనూ' },
+            { scr: AppScreen.CART, icon: <ShoppingBag size={20} />, label: language === 'en' ? 'Order' : 'ఆర్డర్' },
+            { scr: AppScreen.TRACKING, icon: <MapPin size={20} />, label: language === 'en' ? 'Tracker' : 'ట్రాకర్' },
+            { scr: AppScreen.PROFILE, icon: <Award size={20} />, label: language === 'en' ? 'Me' : 'నేను' }
+          ].map(tab => {
+            const isActive = currentScreen === tab.scr;
+            return (
               <button
-                onClick={() => { setIsSoundOn(!isSoundOn); playPushChime(); }}
-                title={isSoundOn ? 'Mute Sounds' : 'Unmute Sounds'}
-                className="p-2.5 rounded-xl bg-neutral-100 dark:bg-white/5 text-gray-500 hover:text-brand-secondary active:scale-95 transition-all text-xs"
+                key={tab.scr}
+                onClick={() => { playPushChime(); setCurrentScreen(tab.scr); }}
+                className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all ${
+                  isActive ? 'text-brand-primary scale-110 font-black' : 'text-gray-400 font-bold hover:text-gray-600 dark:hover:text-gray-200'
+                }`}
               >
-                {isSoundOn ? '🔊' : '🔇'}
+                {tab.icon}
+                <span className="text-[10px] mt-0.5 tracking-tighter">{tab.label}</span>
               </button>
-
-              {/* Language Selection */}
-              <button
-                onClick={() => { playPushChime(); setLanguage(language === 'en' ? 'te' : 'en'); }}
-                className="px-3 py-2 rounded-xl border border-brand-primary/20 text-brand-secondary bg-brand-primary/10 font-black hover:bg-brand-primary/15 transition-all text-xs"
-              >
-                🌐 {language === 'en' ? 'తెలుగు' : 'English'}
-              </button>
-
-              {/* Light vs Dark Theme Selection */}
-              <button
-                onClick={() => { playPushChime(); setIsDarkMode(!isDarkMode); }}
-                className="p-2.5 rounded-xl text-neutral-500 hover:text-neutral-800 dark:hover:text-white bg-neutral-100 dark:bg-white/5 hover:scale-105 active:scale-95 transition-all"
-              >
-                {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* 2. MAIN WEB APP CONTAINER FRAME - NO PHONEY MOCKUPS */}
-        <main className={`relative w-full rounded-3xl border shadow-xl transition-all duration-300 flex flex-col overflow-hidden ${
-          isDarkMode ? 'bg-[#1C1816]/95 border-white/10 text-white' : 'bg-white border-brand-primary/10 text-brand-charcoal'
-        }`}>
-          
-          <div className="flex-1 min-h-[640px] md:min-h-[720px] max-h-[760px] flex flex-col relative overflow-hidden">
-            
-            {/* Live active push notification banner overlay */}
-            <AnimatePresence>
-              {activePush && (
-                <motion.div 
-                  initial={{ y: -65, opacity: 0, scale: 0.95 }}
-                  animate={{ y: 0, opacity: 1, scale: 1 }}
-                  exit={{ y: -65, opacity: 0, scale: 0.95 }}
-                  transition={{ type: 'spring', damping: 14 }}
-                  onClick={() => { setActivePush(null); setCurrentScreen(AppScreen.PROFILE); }}
-                  className="absolute top-11 left-3 right-3 z-50 p-4 rounded-2xl glass-effect shadow-2xl border border-brand-primary/25 flex space-x-3 items-center cursor-pointer hover:opacity-95 select-none"
-                >
-                  <div className="h-10 w-10 bg-gradient-to-tr from-brand-primary to-brand-secondary text-white rounded-xl shadow-md flex items-center justify-center text-xl animate-float-slow">
-                    {activePush.icon}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="flex justify-between items-center text-[10px] font-black text-brand-secondary uppercase tracking-widest">
-                      <span>Cyra Bites Alert 🛵</span>
-                      <span className="font-mono text-[9px] opacity-70">Now</span>
-                    </div>
-                    <p className="text-xs font-black leading-tight text-neutral-800 mt-0.5">
-                      {language === 'en' ? activePush.message : activePush.messageTelugu}
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Rendered Application Subscreen */}
-            <div className="flex-1 w-full h-full relative overflow-hidden">
-              <UiScreens 
-                currentScreen={currentScreen}
-                onNavigate={handleNavigate}
-                language={language}
-                setLanguage={setLanguage}
-                isDarkMode={isDarkMode}
-                setIsDarkMode={setIsDarkMode}
-                cart={cart}
-                setCart={setCart}
-                favorites={favorites}
-                toggleFavorite={handleToggleFavorite}
-                selectedFoodId={selectedFoodId}
-                setSelectedFoodId={setSelectedFoodId}
-                userAddressList={userAddressList}
-                setUserAddressList={handleSetUserAddressList}
-                selectedAddressId={selectedAddressId}
-                setSelectedAddressId={setSelectedAddressId}
-                activeOrderStep={activeOrderStep}
-                setActiveOrderStep={setActiveOrderStep}
-                orderPlacedTotal={orderPlacedTotal}
-                setOrderPlacedTotal={setOrderPlacedTotal}
-                rewardsPoints={rewardsPoints}
-                setRewardsPoints={setRewardsPoints}
-                userName={userName}
-                setUserName={setUserName}
-                userAvatar={userAvatar}
-                setUserAvatar={setUserAvatar}
-                orderHistory={orderHistory}
-                setOrderHistory={handleSetOrderHistory}
-                firebaseUser={fbUser}
-                firebaseLoading={fbLoading}
-                onGoogleSignIn={handleGoogleSignIn}
-                onSignOut={handleSignOut}
-              />
-            </div>
-
-            {/* Adaptive application navigation bar for mobile-sizes (hidden on large displays) */}
-            <div className="h-16 w-full flex justify-around items-center px-4 bg-neutral-50/95 dark:bg-black/35 border-t border-brand-primary/15 md:hidden z-20 select-none">
-              {[
-                { scr: AppScreen.HOME, icon: <Pizza size={18} />, label: language === 'en' ? 'Bites' : 'మెనూ' },
-                { scr: AppScreen.CART, icon: <ShoppingBag size={18} />, label: language === 'en' ? 'Order' : 'ఆర్డర్' },
-                { scr: AppScreen.TRACKING, icon: <MapPin size={18} />, label: language === 'en' ? 'Tracker' : 'ట్రాకర్' },
-                { scr: AppScreen.PROFILE, icon: <Award size={18} />, label: language === 'en' ? 'Me' : 'నేను' }
-              ].map(tab => {
-                const isActive = currentScreen === tab.scr;
-                return (
-                  <button
-                    key={tab.scr}
-                    onClick={() => { playPushChime(); setCurrentScreen(tab.scr); }}
-                    className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all ${
-                      isActive ? 'text-brand-primary scale-110 font-black' : 'text-gray-400 font-bold hover:text-gray-600'
-                    }`}
-                  >
-                    {tab.icon}
-                    <span className="text-[10px] mt-0.5 tracking-tighter">{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-          </div>
-        </main>
+            );
+          })}
+        </div>
 
       </div>
 
