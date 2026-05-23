@@ -266,10 +266,11 @@ export default function App() {
             setUserAvatar={setUserAvatar}
             orderHistory={orderHistory}
             setOrderHistory={handleSetOrderHistory}
-            firebaseUser={fbUser}
-            firebaseLoading={fbLoading}
+            currentUser={fbUser}
+            authLoading={fbLoading}
             onGoogleSignIn={handleGoogleSignIn}
             onSignOut={handleSignOut}
+            onTriggerPush={dispatchPush}
           />
         </div>
 

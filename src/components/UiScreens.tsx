@@ -13,6 +13,16 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { AppScreen, FoodItem, CartItem, UserAddress, OrderHistoryItem, AppNotification } from '../types';
 import { FOOD_ITEMS, SAVED_ADDRESSES, INITIAL_ORDER_HISTORY } from '../data';
+export interface DailyReminder {
+  id: string;
+  title: string;
+  titleTelugu: string;
+  time: string;
+  message: string;
+  messageTelugu: string;
+  icon: string;
+  enabled: boolean;
+}
 
 interface ScreenProps {
   currentScreen: AppScreen;
@@ -41,10 +51,11 @@ interface ScreenProps {
   setUserAvatar: (avatar: string) => void;
   orderHistory: OrderHistoryItem[];
   setOrderHistory: React.Dispatch<React.SetStateAction<OrderHistoryItem[]>>;
-  firebaseUser?: any | null;
-  firebaseLoading?: boolean;
+  currentUser?: any | null;
+  authLoading?: boolean;
   onGoogleSignIn?: () => Promise<any>;
   onSignOut?: () => Promise<void>;
+  onTriggerPush?: (notif: AppNotification) => void;
 }
 
 // ----------------------------------------------------
@@ -222,12 +233,96 @@ export const UiScreens: React.FC<ScreenProps> = ({
   setUserAvatar,
   orderHistory,
   setOrderHistory,
-  firebaseUser,
-  firebaseLoading,
+  currentUser,
+  authLoading,
   onGoogleSignIn,
-  onSignOut
+  onSignOut,
+  onTriggerPush
 }) => {
   const t = TEXTS[language];
+
+  // Daily notifications reminders state with localStorage persistence
+  const [reminders, setReminders] = useState<DailyReminder[]>(() => {
+    const saved = localStorage.getItem('cyrabites_reminders');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return [
+      {
+        id: 'breakfast',
+        title: 'Breakfast Reminder 🥞',
+        titleTelugu: 'అల్పాహార రిమైండర్ 🥞',
+        time: '07:00',
+        message: 'Good morning 🌞 Your breakfast is waiting 🥞',
+        messageTelugu: 'శుభోదయం 🌞 మీ వేడి అల్పాహారం సిద్ధంగా ఉంది 🥞',
+        icon: '🥞',
+        enabled: true
+      },
+      {
+        id: 'lunch',
+        title: 'Lunch Reminder 🍛',
+        titleTelugu: 'మధ్యాహ్న భోజన రిమైండర్ 🍛',
+        time: '12:00',
+        message: 'Lunch time 🍛 Eat well and stay happy 💛',
+        messageTelugu: 'మధ్యాహ్న భోజన సమయం 🍛 చక్కగా తిని సంతోషంగా ఉండండి 💛',
+        icon: '🍛',
+        enabled: true
+      },
+      {
+        id: 'dinner',
+        title: 'Dinner Reminder 🍲',
+        titleTelugu: 'రాత్రి భోజన రిమైండర్ 🍲',
+        time: '19:00',
+        message: 'Dinner alert 🌙 Warm food, peaceful mood 🍲',
+        messageTelugu: 'రాత్రి భోజన సమయం 🌙 వేడి ఆహారం, ప్రశాంతమైన మనసు 🍲',
+        icon: '🍲',
+        enabled: true
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cyrabites_reminders', JSON.stringify(reminders));
+  }, [reminders]);
+
+  const [editingReminderId, setEditingReminderId] = useState<string | null>(null);
+  const [editTime, setEditTime] = useState('');
+  const [editMessage, setEditMessage] = useState('');
+  const [editMessageTe, setEditMessageTe] = useState('');
+
+  // Daily notification simulation slider states
+  const [simHour, setSimHour] = useState(10);
+  const [simMinute, setSimMinute] = useState(30);
+  const [lastTriggeredTimeSim, setLastTriggeredTimeSim] = useState<string>('');
+
+  useEffect(() => {
+    const hh = simHour < 10 ? `0${simHour}` : `${simHour}`;
+    const mm = simMinute < 10 ? `0${simMinute}` : `${simMinute}`;
+    const currentSimString = `${hh}:${mm}`;
+
+    reminders.forEach(rem => {
+      if (rem.enabled && rem.time === currentSimString) {
+        const triggerKey = `${rem.id}-${currentSimString}`;
+        if (lastTriggeredTimeSim !== triggerKey) {
+          setLastTriggeredTimeSim(triggerKey);
+          if (onTriggerPush) {
+            onTriggerPush({
+              id: `sim-triggered-${Date.now()}`,
+              timeLabel: currentSimString,
+              message: rem.message,
+              messageTelugu: rem.messageTelugu,
+              icon: rem.icon,
+              type: rem.id as any
+            });
+          }
+        }
+      }
+    });
+  }, [simHour, simMinute, reminders, lastTriggeredTimeSim, onTriggerPush]);
 
   // For Local states inside screens
   const [onboardIndex, setOnboardIndex] = useState(0);
@@ -724,22 +819,22 @@ export const UiScreens: React.FC<ScreenProps> = ({
           </div>
 
           <button 
-            disabled={firebaseLoading}
+            disabled={authLoading}
             onClick={async () => { 
-              triggerSparkleSound(); 
-              if (onGoogleSignIn) {
-                const loggedIn = await onGoogleSignIn();
-                if (loggedIn) {
-                  navTo(AppScreen.HOME);
-                }
-              } else {
-                navTo(AppScreen.HOME);
-              }
+               triggerSparkleSound(); 
+               if (onGoogleSignIn) {
+                 const loggedIn = await onGoogleSignIn();
+                 if (loggedIn) {
+                   navTo(AppScreen.HOME);
+                 }
+               } else {
+                 navTo(AppScreen.HOME);
+               }
             }}
             className={`w-full py-3.5 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/15 text-white' : 'bg-white border-gray-200 text-gray-700'} hover:bg-gray-100/10 transition-all text-xs font-extrabold flex items-center justify-center space-x-2 active:scale-98 disabled:opacity-50`}
           >
-            <Globe className={`text-blue-500 ${firebaseLoading ? 'animate-spin' : ''}`} size={16} />
-            <span>{firebaseLoading ? 'Signing in...' : t.googleLogin}</span>
+            <Globe className={`text-blue-500 ${authLoading ? 'animate-spin' : ''}`} size={16} />
+            <span>{authLoading ? 'Signing in...' : t.googleLogin}</span>
           </button>
         </div>
 
@@ -2223,7 +2318,7 @@ export const UiScreens: React.FC<ScreenProps> = ({
                 </div>
               )}
               <p className="text-[10px] font-bold text-brand-secondary uppercase tracking-widest">
-                {firebaseUser ? `${firebaseUser.email} 🔐` : (language === 'en' ? 'Verified Cozy Foodie' : 'ధృవీకరించబడిన రుచికరమైన భోజనప్రియులు')}
+                {currentUser ? `${currentUser.email} 🔐` : (language === 'en' ? 'Verified Cozy Foodie' : 'ధృవీకరించబడిన రుచికరమైన భోజనప్రియులు')}
               </p>
             </div>
           </div>
@@ -2279,7 +2374,7 @@ export const UiScreens: React.FC<ScreenProps> = ({
               </div>
 
               {/* Firebase Sign Out option */}
-              {firebaseUser && (
+              {currentUser && (
                 <div 
                   onClick={async () => { 
                     triggerSparkleSound(); 
@@ -2291,9 +2386,277 @@ export const UiScreens: React.FC<ScreenProps> = ({
                     <ShieldCheck size={15} className="text-red-500" />
                     <span>{language === 'en' ? 'Google Sign Out' : 'గూగుల్ లాగౌట్'}</span>
                   </div>
-                  <span className="text-[9px] font-mono opacity-80">{firebaseUser.email}</span>
+                  <span className="text-[9px] font-mono opacity-80">{currentUser.email}</span>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Daily Notifications & Reminders 🔔 */}
+          <div className="space-y-3 pt-1">
+            <div className="flex items-center justify-between px-1">
+              <h4 className="text-xs font-black text-brand-primary uppercase tracking-widest flex items-center space-x-1.5">
+                <span>🔔 Daily Reminders</span>
+                <span className="text-[9px] lowercase text-gray-400 font-bold tracking-normal font-sans">
+                  ({language === 'en' ? 'cozy schedule' : 'సమయ పట్టిక'})
+                </span>
+              </h4>
+            </div>
+
+            <div className={`p-4 rounded-3xl border space-y-4 ${
+              isDarkMode ? 'bg-[#1C1816]/60 border-white/5 text-white' : 'bg-white border-brand-primary/10 text-brand-charcoal'
+            }`}>
+              
+              <p className="text-[10px] text-gray-400 dark:text-gray-300 leading-normal font-medium">
+                {language === 'en' 
+                  ? 'Enable cozy notification prompts to alert your stomach with cute food messages daily!' 
+                  : 'రోజువారీ రుచికరమైన ఆహార హెచ్చరికలను మరియు అందమైన సందేశాలను ఇక్కడ సెట్ చేయండి!'
+                }
+              </p>
+
+              {/* Reminders List */}
+              <div className="space-y-3">
+                {reminders.map(rem => {
+                  const isEditing = editingReminderId === rem.id;
+
+                  // Parse HH:MM to AM/PM for layout display
+                  const formatTimeString = (time24: string) => {
+                    const [hrsStr, minsStr] = time24.split(':');
+                    const hr = parseInt(hrsStr, 10);
+                    if (isNaN(hr)) return time24;
+                    const suffix = hr >= 12 ? 'PM' : 'AM';
+                    const hr12 = hr % 12 || 12;
+                    return `${hr12}:${minsStr} ${suffix}`;
+                  };
+
+                  return (
+                    <div 
+                      key={rem.id}
+                      className={`p-3 rounded-2xl border transition-all ${
+                        isDarkMode 
+                          ? 'bg-black/25 border-white/5 hover:border-white/10' 
+                          : 'bg-neutral-50/70 border-brand-primary/5 hover:shadow-2xs'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between space-x-2">
+                        {/* Custom icon bubble */}
+                        <div className="flex items-center space-x-2.5 flex-1 min-w-0">
+                          <div className="h-9 w-9 flex-shrink-0 bg-brand-primary/15 dark:bg-brand-primary/20 rounded-xl flex items-center justify-center text-lg shadow-sm">
+                            {rem.icon}
+                          </div>
+                          
+                          <div className="text-left min-w-0">
+                            <div className="flex items-center space-x-1.5 flex-wrap">
+                              <span className="text-xs font-extrabold tracking-tight leading-tight">
+                                {language === 'en' ? rem.title.replace(' Reminder 🥞', '').replace(' Reminder 🍛', '').replace(' Reminder 🍲', '') : rem.titleTelugu.replace(' రిమైండర్ 🥞', '').replace(' రిమైండర్ 🍛', '').replace(' రిమైండర్ 🍲', '')}
+                              </span>
+                              <span className="text-[8px] font-mono px-1 py-0.2 bg-brand-secondary/15 text-brand-secondary rounded font-bold">
+                                {formatTimeString(rem.time)}
+                              </span>
+                            </div>
+                            <p className="text-[10px] font-medium text-gray-500 italic mt-0.5 truncate leading-tight dark:text-gray-300">
+                              “{language === 'en' ? rem.message : rem.messageTelugu}”
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Action buttons on right side */}
+                        <div className="flex items-center space-x-1.5 flex-shrink-0">
+                          {/* Simulate Alert button */}
+                          <button
+                            onClick={() => {
+                              triggerSparkleSound();
+                              if (onTriggerPush) {
+                                onTriggerPush({
+                                  id: `test-${rem.id}-${Date.now()}`,
+                                  timeLabel: formatTimeString(rem.time),
+                                  message: rem.message,
+                                  messageTelugu: rem.messageTelugu,
+                                  icon: rem.icon,
+                                  type: rem.id as any
+                                });
+                              }
+                            }}
+                            title={language === 'en' ? 'Test Ring 🔔' : 'పరీక్షా బెల్ 🔔'}
+                            className="p-1 px-1.5 rounded-lg bg-brand-primary/10 hover:bg-brand-primary hover:text-white text-brand-primary transition-all active:scale-90"
+                          >
+                            <Bell size={12} />
+                          </button>
+
+                          {/* Edit Config button */}
+                          <button
+                            onClick={() => {
+                              triggerSparkleSound();
+                              if (isEditing) {
+                                setEditingReminderId(null);
+                              } else {
+                                setEditingReminderId(rem.id);
+                                setEditTime(rem.time);
+                                setEditMessage(rem.message);
+                                setEditMessageTe(rem.messageTelugu);
+                              }
+                            }}
+                            title={language === 'en' ? 'Configure Reminder ⚙️' : 'కాన్ఫిగర్ ⚙️'}
+                            className={`p-1.5 rounded-lg border transition-all active:scale-90 ${
+                              isEditing
+                                ? 'bg-brand-secondary text-white border-brand-secondary'
+                                : 'bg-neutral-100 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                            }`}
+                          >
+                            <Clock size={12} />
+                          </button>
+
+                          {/* Toggle switch */}
+                          <button
+                            onClick={() => {
+                              triggerSparkleSound();
+                              setReminders(prev => prev.map(r => r.id === rem.id ? { ...r, enabled: !r.enabled } : r));
+                            }}
+                            className={`w-7 h-4 rounded-full p-0.5 transition-colors relative ${
+                              rem.enabled ? 'bg-brand-green' : 'bg-gray-300 dark:bg-zinc-700'
+                            }`}
+                          >
+                            <div className={`w-3 h-3 bg-white rounded-full transform transition-transform duration-300 ${
+                              rem.enabled ? 'translate-x-3' : 'translate-x-0'
+                            }`} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Editing Slide Drawer */}
+                      <AnimatePresence>
+                        {isEditing && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            className="border-t border-neutral-100 dark:border-white/5 mt-2 pt-2 space-y-2 select-none overflow-hidden text-left"
+                          >
+                            <div className="grid grid-cols-3 gap-2 items-center">
+                              <label className="text-[10px] font-extrabold uppercase text-gray-400">Time (24h)</label>
+                              <input 
+                                type="time"
+                                value={editTime}
+                                onChange={(e) => setEditTime(e.target.value)}
+                                className="col-span-2 px-2 py-1 text-xs rounded-lg border border-brand-primary bg-white text-gray-800 dark:text-neutral-900 font-mono focus:outline-none"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 items-start">
+                              <label className="text-[10px] font-extrabold uppercase text-gray-400 mt-1">Message (EN)</label>
+                              <textarea 
+                                rows={2}
+                                value={editMessage}
+                                onChange={(e) => setEditMessage(e.target.value)}
+                                className="col-span-2 px-2 py-1 text-xs rounded-lg border border-brand-primary bg-white text-gray-800 dark:text-neutral-900 font-sans focus:outline-none leading-snug resize-none"
+                                placeholder="E.g., Breakfast is ready..."
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 items-start">
+                              <label className="text-[10px] font-extrabold uppercase text-gray-400 mt-1">Message (TE)</label>
+                              <textarea 
+                                rows={2}
+                                value={editMessageTe}
+                                onChange={(e) => setEditMessageTe(e.target.value)}
+                                className="col-span-2 px-2 py-1 text-xs rounded-lg border border-brand-primary bg-white text-gray-800 dark:text-neutral-900 font-sans focus:outline-none leading-snug resize-none"
+                                placeholder="..."
+                              />
+                            </div>
+
+                            <div className="flex space-x-2 pt-1 justify-end">
+                              <button 
+                                onClick={() => { triggerSparkleSound(); setEditingReminderId(null); }}
+                                className="px-2.5 py-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/5 text-[9px] font-bold text-gray-400"
+                              >
+                                Cancel
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  triggerSparkleSound();
+                                  setReminders(prev => prev.map(r => r.id === rem.id ? { 
+                                    ...r, 
+                                    time: editTime || r.time, 
+                                    message: editMessage.trim() || r.message,
+                                    messageTelugu: editMessageTe.trim() || r.messageTelugu 
+                                  } : r));
+                                  setEditingReminderId(null);
+                                }}
+                                className="px-3 py-1 bg-brand-primary text-white text-[9px] font-extrabold rounded-lg hover:bg-brand-primary/95 transition-all"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Time Fast-Forward Simulator Panel */}
+              <div className={`p-3 rounded-2xl border ${
+                isDarkMode ? 'bg-[#2C2420]/75 border-brand-primary/10' : 'bg-brand-primary/5 border-brand-primary/10'
+              } space-y-2`}>
+                <div className="flex items-center justify-between text-[10px] font-extrabold">
+                  <span className="text-gray-500 dark:text-gray-300 flex items-center space-x-1">
+                    <span>🕒 Time Travel Simulator</span>
+                  </span>
+                  <span className="font-mono text-brand-secondary font-black tracking-wide bg-brand-secondary/15 px-2 py-0.5 rounded-md">
+                    {simHour < 10 ? `0${simHour}` : simHour}:{simMinute < 10 ? `0${simMinute}` : simMinute} {simHour >= 12 ? 'PM' : 'AM'}
+                  </span>
+                </div>
+
+                <div className="space-y-1 select-none">
+                  <input 
+                    type="range"
+                    min={0}
+                    max={1439} // Minutes in a day (24 * 60)
+                    value={simHour * 60 + simMinute}
+                    onChange={(e) => {
+                      const totalMins = parseInt(e.target.value, 10);
+                      const h = Math.floor(totalMins / 60);
+                      const m = totalMins % 60;
+                      setSimHour(h);
+                      setSimMinute(m);
+                    }}
+                    className="w-full accent-brand-primary h-1 bg-neutral-200 dark:bg-zinc-700 rounded-lg cursor-pointer focus:outline-none"
+                  />
+                  <div className="flex justify-between text-[7px] text-gray-400 font-mono font-bold pt-0.5">
+                    <span>12:00 AM</span>
+                    <span>06:00 AM</span>
+                    <span>12:00 PM</span>
+                    <span>06:00 PM</span>
+                    <span>11:59 PM</span>
+                  </div>
+                </div>
+
+                {/* Instant Warp Presets for high-fidelity testing */}
+                <div className="flex flex-wrap gap-1.5 pt-1 justify-center select-none">
+                  {reminders.map(rem => (
+                    <button
+                      key={rem.id}
+                      onClick={() => {
+                        triggerSparkleSound();
+                        const [hrs, mins] = rem.time.split(':').map(Number);
+                        setSimHour(hrs);
+                        setSimMinute(mins);
+                      }}
+                      className={`text-[8px] font-black tracking-tight px-2 py-1 rounded-lg border transition-all hover:scale-102 flex items-center space-x-1 ${
+                        isDarkMode 
+                          ? 'bg-neutral-900 border-white/5 text-gray-300 hover:text-white' 
+                          : 'bg-white border-neutral-150 text-gray-650 hover:text-neutral-805 shadow-xs'
+                      }`}
+                    >
+                      <span>{rem.icon} {language === 'en' ? 'Warp' : 'వార్ప్'}</span>
+                      <span className="font-mono text-gray-400">({rem.time})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
             </div>
           </div>
 
