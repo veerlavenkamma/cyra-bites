@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user profile information, rewards points, and preferences.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique user ID matching request.auth.uid" },
+        "name": { "type": "string", "description": "User's display name" },
+        "avatar": { "type": "string", "description": "User's selected emoji avatar" },
+        "rewardsPoints": { "type": "integer", "description": "User's accumulated loyalty points" },
+        "favorites": { "type": "array", "description": "List of favorite food item IDs" },
+        "cart": { "type": "array", "description": "Items currently in the user's shopping cart" }
+      },
+      "required": ["uid", "name", "avatar", "rewardsPoints", "favorites", "cart"]
+    },
+    "Address": {
+      "title": "User Address",
+      "description": "User's delivery address including Meesho-style custom fields.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique address ID" },
+        "label": { "type": "string", "description": "English label" },
+        "labelTelugu": { "type": "string", "description": "Telugu translation of the label" },
+        "addressLine": { "type": "string", "description": "Full formatted address line in English" },
+        "addressLineTelugu": { "type": "string", "description": "Full formatted address line in Telugu" },
+        "isDefault": { "type": "boolean" },
+        "city": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "label", "labelTelugu", "addressLine", "addressLineTelugu", "isDefault", "city"]
+    },
+    "Order": {
+      "title": "Order History",
+      "description": "Individual order history item.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "foodName": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["Delivered", "Pending", "Cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "date", "foodName", "amount", "status"]
+    }
+  },
+  "firestore": {
+    "users/{uid}": {
+      "schema": "User",
+      "description": "User account configurations and profile state."
+    },
+    "users/{uid}/addresses/{addressId}": {
+      "schema": "Address",
+      "description": "List of delivery locations for the user."
+    },
+    "users/{uid}/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Loyalty shopping list of user orders."
+    }
+  }
+}

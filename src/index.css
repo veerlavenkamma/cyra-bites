@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Quicksand:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Quicksand", "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Fredoka", "Quicksand", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-brand-primary: #FF9E59;      /* Cozy soft pastel orange */
+  --color-brand-secondary: #FF8596;    /* Beautiful peach pink */
+  --color-brand-yellow: #FFD275;       /* Warm soft yellow */
+  --color-brand-cream: #FFFDF9;        /* Warm beige/cream white */
+  --color-brand-cream-dark: #F7F3E9;   /* Inner screen background */
+  --color-brand-green: #79D1A3;        /* Soft sweet green accent */
+  --color-brand-charcoal: #2D2724;    /* Elegant neutral charcoal for cute dark mode */
+  
+  --animate-sparkle: sparkle 2s ease-in-out infinite;
+  --animate-float-slow: float-slow 4s ease-in-out infinite;
+  --animate-float-fast: float-fast 2.5s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+  --animate-scooter: scooter 3s linear infinite;
+
+  @keyframes sparkle {
+    0%, 100% { opacity: 0.3; transform: scale(0.9); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-8px) rotate(3deg); }
+  }
+  @keyframes float-fast {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(-4deg); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 4px rgba(255,158,89, 0.2); }
+    50% { box-shadow: 0 0 16px rgba(255,158,89, 0.6); }
+  }
+  @keyframes scooter {
+    0% { transform: translateX(-5px) translateY(0); }
+    25% { transform: translateX(50px) translateY(-1px); }
+    50% { transform: translateX(110px) translateY(1px); }
+    75% { transform: translateX(165px) translateY(-1px); }
+    100% { transform: translateX(230px) translateY(0); }
+  }
+}
+
+/* Base modifications for the premium phone viewport */
+body {
+  background-color: #F8F5F0;
+  color: #3D3531;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Hide scrollbars for slick mobile look */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom rounded card styling */
+.glass-effect {
+  background: rgba(255, 253, 249, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.glass-effect-dark {
+  background: rgba(45, 39, 36, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+

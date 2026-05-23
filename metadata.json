@@ -1,0 +1,6 @@
+{
+  "name": "Cyra Bites",
+  "description": "Crave Your Recipe Anytime. A cozy, futuristic, cute food delivery application featuring warm premium pastel aesthetics, interactive mockups, and real-time food delivery tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
